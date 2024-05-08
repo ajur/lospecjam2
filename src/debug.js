@@ -5,7 +5,7 @@ import msg from './msg';
 
 let _debugPane = null;
 
-export const isDebugOn = import.meta.env.DEV;
+export const isDebugOn = location.search.indexOf('debug') > 0 || import.meta.env.DEV;
 
 export function initDebug(app) {
     createDebugPane();
