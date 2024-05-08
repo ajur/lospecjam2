@@ -56,7 +56,7 @@ export class Walls extends Container {
           tileHeight: 16,
           u: 16,
           v: 0})
-        this.renderGroup.onChildUpdate(this);
+        this.tilemap.renderGroup.onChildUpdate(this);
       })
       p.addButton({'title': 'update tilemap - broken'}).on('click', () => {
         console.log('update tilemap');
@@ -69,7 +69,7 @@ export class Walls extends Container {
         this.addRow();
         console.log(this.intGrid);
         this.redrawTiles();
-        this.renderGroup.onChildUpdate(this);
+        this.tilemap.renderGroup.onChildUpdate(this);
       })
     });
 

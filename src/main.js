@@ -17,7 +17,8 @@ let app;
 
 (async () => {
   app = new Application();
-  await app.init({ preference: "webgpu", background: '#000', width: WIDTH, height: HEIGHT, antialias: false });
+  const preference = new URLSearchParams(window.location.search).get('preference');
+  await app.init({ preference: preference || "webgpu", background: '#000', width: WIDTH, height: HEIGHT, antialias: false });
 
   const appElem = document.querySelector('#app') ?? document.body;
   appElem.appendChild(app.canvas);
