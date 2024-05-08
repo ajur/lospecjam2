@@ -1,0 +1,25 @@
+{
+  "name": "ld55",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "build:assets": "assetpack -c ./assets/assetpack.js"
+  },
+  "devDependencies": {
+    "@assetpack/cli": "^0.8.0",
+    "@assetpack/core": "^0.8.0",
+    "vite": "^5.2.0"
+  },
+  "dependencies": {
+    "@assetpack/plugin-manifest": "^0.8.0",
+    "@pixi/tilemap": "^5.0.1",
+    "gsap": "^3.12.5",
+    "pixi.js": "^8.1.0",
+    "simplex-noise": "^4.0.1",
+    "tweakpane": "^4.0.3"
+  }
+}
