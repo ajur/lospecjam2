@@ -1,19 +1,30 @@
-# LD55 - "???"
-Ludum Dare 55 entry  
-Theme: **???**
+# LospecJam2 - "Space Raid"
+Lospec Jam 2 entry.
 
-Welcome to my second LudumDate game! :)  
-*Please still be forgiving, it's my second entry in **any** game jam :)*
+Constraints:
+- 256x224 resolution
+- 16 color palette [Console16](https://lospec.com/palette-list/console16) by [adamPhoebe](https://lospec.com/adamphoebe)
+- 8 Button Controller
+  - 4-Way Directional Pad
+  - A/B Buttons
+  - Start/Select Buttons
 
-**Web or mobile:** https://ajur.pl/ld55/  
-<!-- **Itch:** https://ajur.itch.io/ld55  
-*(for now, rather not use itch for iOS, as its bugged)* -->
+Optional:
+- 2 Player Support
+- 4-channel sound chip, with any combination of Triangle, Pulse, Saw, and Noise Generators
+- 3 Built-in fonts: [BM Space](https://www.dafont.com/bm-space.font), [BM Japan](https://www.dafont.com/bm-japan.font), [04b03](https://www.dafont.com/04b-03.font) (free to render with the built in font chip)
+- 16x16px sprites, up to 64 on screen at once
+- 16x16 tiles, used on up to 4 background layers, can scroll independently horizontally/vertically
+- unlimited 256x256px image textures
+
+**Web or mobile:** https://ajur.pl/lospecjam2/  
 
 ### Changelog:
-#### 0.1
+#### 0.2
+- Walls, movement, collisions
 - Initial commit
-- Bump Pixi by two versions :O
 
 ### Some prod info:
-- Code: VSCode, PIXI.js, gsap, and few more - all smashed together in some makeshift "game engine"
-- Art: Currently placeholder art from https://pixelfrog-assets.itch.io/tiny-swords
+Makeshift game engine custom built on top of [Pixi.js](https://pixijs.com/).  
+Art done in [Aseprite](https://www.aseprite.org/).  
+I've kinda abused [LDtk](https://ldtk.io/) level editor, and used it to export sprites and tileset data.

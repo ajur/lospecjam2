@@ -36,7 +36,7 @@ export function addDebugPane(title, addCb, context) {
 
 function createDebugPane() {
 
-    const pane = new Pane({title: "Debug pane"});
+    const pane = new Pane({title: "Dev tools"});
     pane.hidden = true;
 
     msg.once("preloader/closed", () => { pane.hidden = false; });
@@ -44,10 +44,6 @@ function createDebugPane() {
     pane.addBinding(PIXI.Ticker.shared, 'FPS', {
         readonly: true,
     });
-    // pane.addBinding(PIXI.Ticker.shared, 'FPS', {
-    //     readonly: true,
-    //     view: 'graph'
-    // });
 
     _debugPane = pane;
 }

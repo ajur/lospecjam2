@@ -1,8 +1,9 @@
 import { TILESETS_SPRITESHEET } from '../consts';
-import { Assets, Container, Graphics, Rectangle } from 'pixi.js';
+import { Assets, Bounds, Container, Graphics, Rectangle, Ticker } from 'pixi.js';
 import { Tilemap } from '@pixi/tilemap';
 import { Random } from '../rand';
 import { addDebugPane } from '../debug';
+import gsap from 'gsap';
 
 
 export class Walls extends Container {
@@ -21,10 +22,10 @@ export class Walls extends Container {
     this.noiseY = 0;
     this.noiseDy = 0.1;
     this.noiseLX = 0;
-    this.rightRX = 1;
+    this.rightRX = this.noiseDy * 10;
 
-    this.intGridRows = this.rows + 3;
-    this.intGridOffset = 1;
+    this.intGridOffset = 3;
+    this.intGridRows = this.rows + this.intGridOffset + 1;
     this.intGrid = [];
     while(this.intGrid.length < this.intGridRows) {
       this.addRow();
@@ -34,65 +35,88 @@ export class Walls extends Container {
     const spriteSheet = Assets.get(TILESETS_SPRITESHEET);
     this.tileset = spriteSheet.data.tilesets.walls;
     this.tilemap = this.addChild(new Tilemap(spriteSheet.textureSource));
-    console.log('- TM - tilemap instance');
-    window.TM = this.tilemap;
     this.redrawTiles();
 
-    this.addChild(new Graphics().rect(0, 0, width, height).stroke({ width: 1, color: 0xffffff, alignment: 1 }));
-    
-    this.eventMode = "static";
-    this.hitArea = new Rectangle(0, 0, this.width, this.height);
-    
-    addDebugPane('Map', (p) => {
-      p.addButton({title: 'clear tilemap - broken'}).on('click', () => {
-        console.log('clear tilemap');
-        this.tilemap.clear();
-      })
-      p.addButton({title: 'clear tilemap and add tile - working'}).on('click', () => {
-        console.log('clear tilemap, add tile, update render group');
-        this.tilemap.clear();
-        this.tilemap.tile(0, 0, 0, {
-          tileWidth: 16,
-          tileHeight: 16,
-          u: 16,
-          v: 0})
-        this.tilemap.renderGroup.onChildUpdate(this);
-      })
-      p.addButton({'title': 'update tilemap - broken'}).on('click', () => {
-        console.log('update tilemap');
-        this.addRow();
-        console.log(this.intGrid);
-        this.redrawTiles();
-      })
-      p.addButton({'title': 'update tilemap and render group - working'}).on('click', () => {
-        console.log('update tilemap, update render group');
-        this.addRow();
-        console.log(this.intGrid);
-        this.redrawTiles();
-        this.tilemap.renderGroup.onChildUpdate(this);
-      })
+    this.baseSpeed = 0.5;
+    this.accRatio = 0.005;
+    this._tilemapOffset = 0;
+
+    addDebugPane('Map', (pane) => {
+      pane.expanded = false;
+      pane.addBinding(this, 'noiseY', {readonly: true});
+      pane.addBinding(this, 'noiseDy', {min: 0.01, max: 0.25, step: 0.001});
+      pane.addBinding(this, 'baseSpeed', {min: 0.01, max: 5, step: 0.01});
+      pane.addBinding(this, 'accRatio', {min: 0.001, max: 0.1, step: 0.001});
+      pane.addBinding(this, 'moveSpeed', {readonly: true});
     });
 
+    this._minWL = 16;
+    this._maxWL = 0;
+  }
+
+  move() {
+    Ticker.shared.add(this.moveOnTick, this);
+  }
+
+  stop() {
+    Ticker.shared.remove(this.moveOnTick, this);
+  }
+
+  smoothStop() {
+    gsap.to(this, {baseSpeed: 0, duration: 1, onComplete: () => this.stop()});
+  }
+
+  getCollidersForBounds(bounds) {
+    const outBounds = [];
+    const shipFirstRow = Math.floor((bounds.minY - this._tilemapOffset) / this.tileSize);
+    for (let i = 0; i < 2; ++i) {
+      const rowIdx = shipFirstRow + i;
+      const {nLeft, nRight} = this.intGrid[rowIdx + this.intGridOffset];
+      const rowPos = rowIdx * this.tileSize + this._tilemapOffset;
+
+      const rectLeft = new Rectangle(0, rowPos, nLeft * this.tileSize, this.tileSize);
+      if (rectLeft.intersects(bounds)) outBounds.push(rectLeft);
+      const rectRight = new Rectangle(this.width - nRight * this.tileSize, rowPos, nRight * this.tileSize, this.tileSize);
+      if (rectRight.intersects(bounds)) outBounds.push(rectRight);
+    }
+    return outBounds;
+  }
+
+  get moveSpeed() {
+    return this.baseSpeed + (this.noiseY * this.accRatio);
+  }
+
+  moveOnTick({deltaTime, deltaMS}) {
+    this._tilemapOffset += this.moveSpeed * deltaTime;
+    if (this._tilemapOffset >= this.tileSize) {
+      this._tilemapOffset -= this.tileSize;
+      this.addRow();
+      this.redrawTiles();
+    }
+    this.tilemap.y = Math.floor(this._tilemapOffset);
   }
 
   addRow() {
     this.noiseY += this.noiseDy;
-    const wl = this.rng.noise2DNorm(this.noiseLX, this.noiseY) * (this.cols / 2 - 1);
-    const wr = this.cols - this.rng.noise2DNorm(this.rightRX, this.noiseY) * (this.cols / 2 - 1) -1;
+
     const row = [];
+    row.nLeft = 1 + Math.floor(this.rng.noise2DNorm(this.noiseLX, this.noiseY) * (this.cols / 2 - 1));
+    row.nRight = 1 + Math.floor(this.rng.noise2DNorm(this.rightRX, this.noiseY) * (this.cols / 2 - 1));
+    const wl = row.nLeft;
+    const wr = this.cols - row.nRight;
+
     for (let col = 0; col < this.cols; ++col) {
       row.push((col < wl || col >= wr) ? 1 : 0);
     }
-    this.intGrid.push(row);
+    this.intGrid.unshift(row);
     if (this.intGrid.length > this.intGridRows) {
-      this.intGrid.shift();
+      this.intGrid.pop();
     }
   }
 
   redrawTiles() {
     this.tilemap.clear();
-
-    for (let row = 0; row < this.rows; ++row) {
+    for (let row = -2; row < this.rows; ++row) {
       for (let col = 0; col < this.cols; ++col) {
         const t = pickTile(this.tileset, this.intGrid, col, row + this.intGridOffset);
         if (t) {

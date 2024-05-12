@@ -8,6 +8,8 @@ import { initDebug, isDebugOn } from './debug';
 import { createScene } from './game/GameScene.js';
 import { WIDTH } from './consts.js';
 import { HEIGHT } from './consts.js';
+import { initInput } from './input.js';
+import msg from './msg.js';
 
 if (!isDebugOn) {
   preloader.show();
@@ -26,6 +28,7 @@ let app;
   if (isDebugOn) {
     initDebug(app);
   }
+  initInput();
 
   await preloader.loadAssets();
 
@@ -46,5 +49,3 @@ function onWindowResize() {
 
   app.renderer.canvas.style.transform = `scale(${scale})`
 }
-
-
