@@ -42,7 +42,8 @@ async function loadAssets() {
   const manifest = await manifestFile.json();
 
   await Assets.init({ manifest, basePath: 'assets' });
-  const bundle = await Assets.loadBundle('default', onProgress);
+  await Assets.loadBundle('default', onProgress);
+
   msg.emit("preloader/loaded");
 
   if (onLoaded) {

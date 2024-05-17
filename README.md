@@ -21,7 +21,9 @@ Optional:
 
 ### Changelog:
 #### 0.2
+- Second player, gamepad support
 - Walls, movement, collisions
+#### 0.0
 - Initial commit
 
 ### Some prod info:

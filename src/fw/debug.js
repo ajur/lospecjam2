@@ -3,6 +3,10 @@ import { Pane } from "tweakpane";
 import * as PIXI from 'pixi.js';
 import msg from './msg';
 
+/**
+ * @type {Pane}
+ * @private
+ */
 let _debugPane = null;
 
 export const isDebugOn = location.search.indexOf('debug') > 0 || import.meta.env.DEV;
@@ -23,15 +27,22 @@ export function initDebug(app) {
     global.__PIXI_APP__ = app;
     console.log('- PANE - tweakpane, until I replace it with something custom')
     global.PANE = _debugPane;
-    
 }
 
 
+/**
+ * @param {string} title
+ * @param {(Pane) => null} addCb
+ * @param {object} context
+ * @returns {(function())|*|(function(): *)}
+ */
 export function addDebugPane(title, addCb, context) {
     if (isDebugOn && _debugPane) {
         const f = _debugPane.addFolder({title});
         addCb.call(context, f);
+        return () => _debugPane.remove(f);
     }
+    return () => {};
 }
 
 function createDebugPane() {

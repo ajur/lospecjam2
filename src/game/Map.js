@@ -1,9 +1,8 @@
-import { TILESETS_SPRITESHEET } from '../consts';
-import { Assets, Bounds, Container, Graphics, Rectangle, Ticker } from 'pixi.js';
+import { TILESETS_SPRITESHEET } from '~/consts';
+import { Assets, Container, Rectangle } from 'pixi.js';
 import { Tilemap } from '@pixi/tilemap';
-import { Random } from '../rand';
-import { addDebugPane } from '../debug';
-import gsap from 'gsap';
+import { Random } from '~/fw/rand';
+import { addDebugPane } from '~/fw/debug';
 
 
 export class Walls extends Container {
@@ -37,33 +36,21 @@ export class Walls extends Container {
     this.tilemap = this.addChild(new Tilemap(spriteSheet.textureSource));
     this.redrawTiles();
 
-    this.baseSpeed = 0.5;
-    this.accRatio = 0.005;
     this._tilemapOffset = 0;
 
-    addDebugPane('Map', (pane) => {
+    this.removeDebugPane = addDebugPane('Map', (pane) => {
       pane.expanded = false;
       pane.addBinding(this, 'noiseY', {readonly: true});
       pane.addBinding(this, 'noiseDy', {min: 0.01, max: 0.25, step: 0.001});
-      pane.addBinding(this, 'baseSpeed', {min: 0.01, max: 5, step: 0.01});
-      pane.addBinding(this, 'accRatio', {min: 0.001, max: 0.1, step: 0.001});
-      pane.addBinding(this, 'moveSpeed', {readonly: true});
     });
 
     this._minWL = 16;
     this._maxWL = 0;
   }
 
-  move() {
-    Ticker.shared.add(this.moveOnTick, this);
-  }
-
-  stop() {
-    Ticker.shared.remove(this.moveOnTick, this);
-  }
-
-  smoothStop() {
-    gsap.to(this, {baseSpeed: 0, duration: 1, onComplete: () => this.stop()});
+  destroy(options) {
+    this.removeDebugPane();
+    super.destroy(options);
   }
 
   getCollidersForBounds(bounds) {
@@ -82,12 +69,8 @@ export class Walls extends Container {
     return outBounds;
   }
 
-  get moveSpeed() {
-    return this.baseSpeed + (this.noiseY * this.accRatio);
-  }
-
-  moveOnTick({deltaTime, deltaMS}) {
-    this._tilemapOffset += this.moveSpeed * deltaTime;
+  move(dy) {
+    this._tilemapOffset += dy;
     if (this._tilemapOffset >= this.tileSize) {
       this._tilemapOffset -= this.tileSize;
       this.addRow();
@@ -133,14 +116,11 @@ export class Walls extends Container {
 
 function pickTile(tileset, intGrid, cx, cy) {
   if (!intGrid[cy - 1] || !intGrid[cy] || !intGrid[cy + 1]) {
-    if (intGrid[cy]?.[cx] === 1) {
-      return {w: 16, h: 16, x: 16, y: 32}  // just for tests
-    }
     return null;
   }
   const mask = [
-    intGrid[cy - 1]?.[cx - 1] ?? 1, intGrid[cy - 1]?.[cx], intGrid[cy - 1]?.[cx + 1] ?? 1, 
-    intGrid[cy]?.[cx - 1] ?? 1, intGrid[cy]?.[cx], intGrid[cy]?.[cx + 1] ?? 1, 
+    intGrid[cy - 1]?.[cx - 1] ?? 1, intGrid[cy - 1]?.[cx], intGrid[cy - 1]?.[cx + 1] ?? 1,
+    intGrid[cy]?.[cx - 1] ?? 1, intGrid[cy]?.[cx], intGrid[cy]?.[cx + 1] ?? 1,
     intGrid[cy + 1]?.[cx - 1] ?? 1, intGrid[cy + 1]?.[cx], intGrid[cy + 1]?.[cx + 1] ?? 1
   ];
 

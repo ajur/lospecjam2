@@ -1,8 +1,8 @@
 import { AnimatedSprite, Assets } from "pixi.js";
-import { ANIMATIONS_SPRITESHEET } from "./consts";
+import { ANIMATIONS_SPRITESHEET } from "~/consts";
 
 
-export function createAnimation(name, {speed = 0.15, loop = true, autoplay = false, visible = true, onComplete, tint} = {}) {
+export function createAnimation(name, {speed = 0.15, loop = true, autoplay = true, visible = true, onComplete, tint} = {}) {
   const animFrames = Assets.get(ANIMATIONS_SPRITESHEET).animations[name];
   const spr = new AnimatedSprite(animFrames);
   spr.animationSpeed = speed;
