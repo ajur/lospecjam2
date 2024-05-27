@@ -20,8 +20,8 @@ export const anyController = new Proxy(controllers, {
 
 
 export function initInput() {
-  controllers.push(new KeyboardController(KEYMAP_ARROWS));
-  controllers.push(new KeyboardController(KEYMAP_WSAD));
+  controllers.push(new KeyboardController('arrows', KEYMAP_ARROWS));
+  controllers.push(new KeyboardController('wsad', KEYMAP_WSAD));
 
   waitForGamepads();
 }
@@ -44,8 +44,8 @@ export class Controller {
 
 
 class KeyboardController extends Controller {
-  constructor(keyMap) {
-    super('KBD_' + keyMap[0]);
+  constructor(name, keyMap) {
+    super('KBD_' + name);
     this.mapKey = new Map(keyMap.map((k, idx) => [k, KEYS[idx]]));
 
     window.addEventListener('keydown', this.onKeyDown.bind(this));

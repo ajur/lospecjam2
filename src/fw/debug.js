@@ -16,7 +16,7 @@ export function initDebug(app) {
 
     const global = globalThis;
 
-    console.log('Just for recap, what we have here...:')
+    console.log('Available globals (for debugging):')
     console.log('- PIXI - for some fun.. and dev tools')
     global.PIXI = PIXI;
     console.log('- gsap - wiggle wiggle')
@@ -30,13 +30,7 @@ export function initDebug(app) {
 }
 
 
-/**
- * @param {string} title
- * @param {(Pane) => null} addCb
- * @param {object} context
- * @returns {(function())|*|(function(): *)}
- */
-export function addDebugPane(title, addCb, context) {
+export function addDebugPane(title, addCb, context = null) {
     if (isDebugOn && _debugPane) {
         const f = _debugPane.addFolder({title});
         addCb.call(context, f);

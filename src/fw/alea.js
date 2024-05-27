@@ -8,7 +8,7 @@ export function alea(seedOrState) {
   const isAleaState = typeof seedOrState === "object" && stateKeys.every((k) => seedOrState[k] != null);
   const state = isAleaState ? seedOrState : seedState(seedOrState);
   return aleaImpl(state);
-};
+}
 
 function seedState(seed) {
   let n = 0xefc8249d;
@@ -44,7 +44,7 @@ function seedState(seed) {
 
 function aleaImpl({ c, s0, s1, s2 }) {
   const state = { c, s0, s1, s2 };
-  
+
   const next = () => {
     const t = 2091639 * state.s0 + state.c * 2.3283064365386963e-10; // 2^-32
     state.s0 = state.s1;

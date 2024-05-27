@@ -1,12 +1,12 @@
 import { TILESETS_SPRITESHEET } from '~/consts';
-import { Assets, Container, Rectangle } from 'pixi.js';
+import { Assets, Container, Graphics, Rectangle } from 'pixi.js';
 import { Tilemap } from '@pixi/tilemap';
-import { Random } from '~/fw/rand';
+import { Random } from '~/fw/Random.js';
 import { addDebugPane } from '~/fw/debug';
 
 
-export class Walls extends Container {
-  constructor(width, height, tileSize = 16) {
+export class Map extends Container {
+  constructor({width, height, tileSize, randomize = true}) {
     super();
 
     this.targetWidth = width;
@@ -16,20 +16,21 @@ export class Walls extends Container {
     this.cols = Math.ceil(this.targetWidth / this.tileSize);
     this.rows = Math.ceil(this.targetHeight / this.tileSize);
 
-    this.rng = new Random();
+    this.rng = randomize ? new Random() : Random.from(42);
 
     this.noiseY = 0;
     this.noiseDy = 0.1;
     this.noiseLX = 0;
     this.rightRX = this.noiseDy * 10;
 
-    this.intGridOffset = 3;
+    this.intGridOffset = this.rows;
     this.intGridRows = this.rows + this.intGridOffset + 1;
     this.intGrid = [];
     while(this.intGrid.length < this.intGridRows) {
       this.addRow();
     }
-    console.log(this.intGrid);
+
+    this.rowsGenerated = 0;
 
     const spriteSheet = Assets.get(TILESETS_SPRITESHEET);
     this.tileset = spriteSheet.data.tilesets.walls;
@@ -38,14 +39,17 @@ export class Walls extends Container {
 
     this._tilemapOffset = 0;
 
+
+    this.intGridViz = this.addChild(new Graphics());
+    this.intGridViz.visible = false;
+
     this.removeDebugPane = addDebugPane('Map', (pane) => {
       pane.expanded = false;
       pane.addBinding(this, 'noiseY', {readonly: true});
       pane.addBinding(this, 'noiseDy', {min: 0.01, max: 0.25, step: 0.001});
+      pane.addBinding(this, 'rowsGenerated', {readonly: true, step: 1});
+      pane.addBinding(this.intGridViz, 'visible', {label: 'showIntGrid'});
     });
-
-    this._minWL = 16;
-    this._maxWL = 0;
   }
 
   destroy(options) {
@@ -55,7 +59,7 @@ export class Walls extends Container {
 
   getCollidersForBounds(bounds) {
     const outBounds = [];
-    const shipFirstRow = Math.floor((bounds.minY - this._tilemapOffset) / this.tileSize);
+    const shipFirstRow = Math.floor((bounds.top - this._tilemapOffset) / this.tileSize);
     for (let i = 0; i < 2; ++i) {
       const rowIdx = shipFirstRow + i;
       const {nLeft, nRight} = this.intGrid[rowIdx + this.intGridOffset];
@@ -69,12 +73,24 @@ export class Walls extends Container {
     return outBounds;
   }
 
+  getCurrentSpawnRange(offset = -2) {
+    const row = this.intGrid[this.intGridOffset + offset];
+    const rowY = this.tileSize * offset + this._tilemapOffset;
+    return {
+      y: rowY,
+      xMin: row.nLeft * this.tileSize,
+      xMax: (this.cols - row.nRight) * this.tileSize
+    };
+  }
+
   move(dy) {
     this._tilemapOffset += dy;
     if (this._tilemapOffset >= this.tileSize) {
       this._tilemapOffset -= this.tileSize;
       this.addRow();
       this.redrawTiles();
+      this.redrawIntGridViz();
+      ++this.rowsGenerated;
     }
     this.tilemap.y = Math.floor(this._tilemapOffset);
   }
@@ -112,7 +128,22 @@ export class Walls extends Container {
       }
     }
   }
+
+  redrawIntGridViz() {
+    if (!this.intGridViz.visible) return;
+    const colors = [0x2d006e, 0x3c80db];
+    const size = 3;
+    this.intGridViz.clear();
+    for (let row = 0; row < this.intGridRows; ++row) {
+      for (let col = 0; col < this.cols; ++col) {
+        const igv = this.intGrid[row][col];
+        this.intGridViz.rect(col * size, row * size, size, size).fill(colors[igv]);
+      }
+    }
+    this.intGridViz.rect(0, size * this.intGridOffset, size * this.cols, size * this.rows).fill({color: 0xffffff, alpha: 0.1})
+  }
 }
+
 
 function pickTile(tileset, intGrid, cx, cy) {
   if (!intGrid[cy - 1] || !intGrid[cy] || !intGrid[cy + 1]) {

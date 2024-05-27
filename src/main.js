@@ -1,4 +1,4 @@
-// import './hello.js'
+import './fw/hello.js'
 import './style.css'
 
 import { Application } from 'pixi.js';
@@ -31,10 +31,13 @@ if (!isDebugOn) {
   game.mainMenu();
 
   const onWindowResize = () => {
-    const {innerWidth, innerHeight} = window;
-    const scale = Math.min(Math.floor(innerWidth / WIDTH), Math.floor(innerHeight / HEIGHT));
+    const {innerWidth, innerHeight, devicePixelRatio} = window;
+    const scale = Math.max(1, Math.min(
+      Math.floor(innerWidth * devicePixelRatio / WIDTH),
+      Math.floor(innerHeight * devicePixelRatio / HEIGHT)
+    )) / devicePixelRatio;
 
-    app.renderer.canvas.style.transform = `scale(${scale})`
+    app.renderer.canvas.style.width = `${WIDTH * scale}px`;
   };
 
   window.addEventListener('resize', onWindowResize);
