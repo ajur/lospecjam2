@@ -1,4 +1,4 @@
-import { Container, Ticker, Sprite, Texture, Rectangle } from 'pixi.js';
+import { Sprite, Texture, Ticker } from 'pixi.js';
 import gsap from 'gsap';
 
 import { addDebugPane } from '~/fw/debug';
@@ -7,6 +7,7 @@ import { createAnimation, PPPContainer } from '~/fw/pixiTools';
 import { clamp } from '~/fw/tools';
 import msg from "~/fw/msg.js";
 import { Projectile } from "~/game/Projectile.js";
+import { ColliderRect } from "~/game/ColliderRect.js";
 
 
 export const RED_SHIP = 'red';
@@ -14,27 +15,30 @@ export const GREEN_SHIP = 'green';
 
 const COLLIDERS = {
   [RED_SHIP]: [
-    [new Rectangle(-1, -6, 2, 3), new Rectangle(-2, -3, 4, 10), new Rectangle(-5, 2, 3, 5), new Rectangle(2, 2, 3, 5)],
-    [new Rectangle(-1, -6, 2, 3), new Rectangle(-2, -3, 4, 10), new Rectangle(-7, 2, 5, 5), new Rectangle(2, 2, 5, 5)],
-    [new Rectangle(-1, -6, 2, 3), new Rectangle(-2, -3, 4, 10), new Rectangle(-5, 2, 3, 5), new Rectangle(2, 2, 3, 5)],
+    [new ColliderRect(-1, -6, 2, 3, "nose"), new ColliderRect(-2, -3, 4, 10, "hull"), new ColliderRect(-5, 2, 3, 5, "leftWing"), new ColliderRect(2, 2, 3, 5, "rightWing")],
+    [new ColliderRect(-1, -6, 2, 3, "nose"), new ColliderRect(-2, -3, 4, 10, "hull"), new ColliderRect(-7, 2, 5, 5, "leftWing"), new ColliderRect(2, 2, 5, 5, "rightWing")],
+    [new ColliderRect(-1, -6, 2, 3, "nose"), new ColliderRect(-2, -3, 4, 10, "hull"), new ColliderRect(-5, 2, 3, 5, "leftWing"), new ColliderRect(2, 2, 3, 5, "rightWing")],
   ],
   [GREEN_SHIP]: [
-    [new Rectangle(-1, -6, 2, 3), new Rectangle(-2, -3, 4, 10), new Rectangle(-6, 1, 4, 5), new Rectangle(2, 1, 4, 5)],
-    [new Rectangle(-1, -6, 2, 3), new Rectangle(-2, -3, 4, 10), new Rectangle(-7, 1, 5, 5), new Rectangle(2, 1, 5, 5)],
-    [new Rectangle(-1, -6, 2, 3), new Rectangle(-2, -3, 4, 10), new Rectangle(-6, 1, 4, 5), new Rectangle(2, 1, 4, 5)],
+    [new ColliderRect(-1, -6, 2, 3, "nose"), new ColliderRect(-2, -3, 4, 10, "hull"), new ColliderRect(-6, 1, 4, 5, "leftWing"), new ColliderRect(2, 1, 4, 5, "rightWing")],
+    [new ColliderRect(-1, -6, 2, 3, "nose"), new ColliderRect(-2, -3, 4, 10, "hull"), new ColliderRect(-7, 1, 5, 5, "leftWing"), new ColliderRect(2, 1, 5, 5, "rightWing")],
+    [new ColliderRect(-1, -6, 2, 3, "nose"), new ColliderRect(-2, -3, 4, 10, "hull"), new ColliderRect(-6, 1, 4, 5, "leftWing"), new ColliderRect(2, 1, 4, 5, "rightWing")],
   ]
-}
+};
+const SHIP_PROJECTILE = {
+  [RED_SHIP]: "laser",
+  [GREEN_SHIP]: "bullet"
+};
 
 
 export class PlayerShip extends PPPContainer {
 
   #hasShield = false;
-
   #moveTween;
-
   #autoShotTimer = 0;
+  #energy = 1;
 
-  constructor({type, controller, lanes, freeMovement, addProjectile}) {
+  constructor({type, controller, lanes, freeMovement, addProjectile, onEnergyChanged}) {
     super();
 
     this.freeMovement = freeMovement;
@@ -63,7 +67,6 @@ export class PlayerShip extends PPPContainer {
     this.spr = this.addChild(Sprite.from(this.shipTextures[this.currentTexture]));
 
     this.colliders = COLLIDERS[this.shipType];
-    this.partNames = ["nose", "hull", "leftWing", "rightWing"];
 
     this.moveSpeed = 0.05;
     this.vx = 0;
@@ -73,6 +76,12 @@ export class PlayerShip extends PPPContainer {
     this.registerShot = addProjectile;
     this.autoShotDelay = 500; // ms
     this.shotVelocity = 3.5;  // px / update
+    this.shootType = SHIP_PROJECTILE[type];
+
+    this.onEnergyChanged = onEnergyChanged;
+    this.energyLossConstant = 0.00001;
+    this.energyLossYMovement = 0.001;
+    this.energyLossShoot = 0.01;
 
     this.acceptInput = false;
 
@@ -85,10 +94,15 @@ export class PlayerShip extends PPPContainer {
       pane.expanded = false;
       pane.addBinding(this, 'moveSpeed', { min: 0.001, max: 0.2, step: 0.001 });
       pane.addBinding(this, 'vDamp', { min: 0.9, max: 1, step: 0.001 });
-      pane.addBinding(this, 'hasShield');
-      pane.addBinding(this.shieldSpr, 'tint', {view: 'color'});
+      // pane.addBinding(this, 'hasShield');
+      // pane.addBinding(this.shieldSpr, 'tint', {view: 'color'});
       pane.addBinding(this, 'autoShotDelay', {min: 0, max: 2000, step: 1});
       pane.addBinding(this, 'shotVelocity', {min: 0.1, max: 10, step: 0.001});
+
+      pane.addBinding(this, 'energy', {readonly: true});
+      pane.addBinding(this, 'energyLossConstant', {min: 0.000, max: 0.001, step: 0.00001});
+      pane.addBinding(this, 'energyLossYMovement', {min: 0.001, max: 0.1, step: 0.001});
+      pane.addBinding(this, 'energyLossShoot', {min: 0.001, max: 0.1, step: 0.001});
     });
   }
 
@@ -99,6 +113,17 @@ export class PlayerShip extends PPPContainer {
     gsap.killTweensOf(this);
     this.removeDebugPane();
     super.destroy(options);
+  }
+
+  get energy() {
+    return this.#energy;
+  }
+  set energy(val) {
+    this.#energy = clamp(val, 0, 1);
+    this.onEnergyChanged(this.#energy);
+    if (this.acceptInput && this.#energy === 0) {
+      this.acceptInput = false;
+    }
   }
 
   get hasShield() {
@@ -116,14 +141,7 @@ export class PlayerShip extends PPPContainer {
   }
 
   getColliders() {
-    const {x, y} = this.position;
-    return this.colliders[this.currentTexture].map((c, idx) => {
-      const r = c.clone();
-      r.x += x;
-      r.y += y;
-      r.partName = this.partNames[idx];
-      return r;
-    })
+    return this.colliders[this.currentTexture].map(c => c.offsetFrom(this));
   }
 
   deploy({x, yStart, currentLane}) {
@@ -137,7 +155,7 @@ export class PlayerShip extends PPPContainer {
   }
 
   crash(part) {
-    console.log(this.shipType + ' crashed on part', part.partName);
+    console.log(this.shipType + ' crashed on part', part.name);
     this.acceptInput = false;
     gsap.killTweensOf(this);
     this.shieldSpr.visible = false;
@@ -155,17 +173,19 @@ export class PlayerShip extends PPPContainer {
 
   shoot() {
     this.registerShot(new Projectile({
-      kind: 'laser',
+      kind: this.shootType,
       x: this.x,
       y: this.y,
       vx: 0,
-      vy: -this.shotVelocity
+      vy: -this.shotVelocity,
+      shooter: this
     }));
   }
 
   onTickerUpdate({deltaTime, deltaMS}) {
     let ax = 0;
     let ay = 0;
+    let totalEnergyLoss = this.energyLossConstant;
     if (this.acceptInput) {
       if (this.controller.up) ay -= 1;
       if (this.controller.down) ay += 1;
@@ -182,6 +202,7 @@ export class PlayerShip extends PPPContainer {
         if (this.#autoShotTimer < 0) {
           this.shoot();
           this.#autoShotTimer = this.autoShotDelay;
+          totalEnergyLoss += this.energyLossShoot;
         }
       } else {
         this.#autoShotTimer = 0
@@ -192,11 +213,13 @@ export class PlayerShip extends PPPContainer {
 
     if (this.freeMovement) {
       this.y = clamp(this.y + this.vy * deltaTime, 10, HEIGHT - 10);
+      totalEnergyLoss += this.energyLossYMovement * Math.abs(this.vy) * deltaTime;
     } else if (this.laneChangeDelay > 0) {
       this.laneChangeDelay = this.ay === 0 ? 0 : (this.laneChangeDelay - deltaMS);
     } else if (ay !== 0 && this.laneChangeDelay <= 0) {
       const nextLane = clamp(this.currentLane + ay, 0, this.lanes.length - 1);
       if (nextLane !== this.currentLane) {
+        totalEnergyLoss += this.energyLossYMovement * Math.abs(this.lanes[nextLane] - this.lanes[this.currentLane]);
         this.currentLane = nextLane;
         gsap.killTweensOf(this);
         this.#moveTween = gsap.to(this, {
@@ -206,6 +229,8 @@ export class PlayerShip extends PPPContainer {
         this.laneChangeDelay = 300;
       }
     }
+
+    this.energy -= totalEnergyLoss;
 
     this.vx *= this.vDamp;
     this.vy *= this.vDamp;

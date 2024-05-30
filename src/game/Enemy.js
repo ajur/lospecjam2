@@ -1,8 +1,9 @@
 import { createAnimation, PPPContainer } from "~/fw/pixiTools.js";
-import { Rectangle } from "pixi.js";
+import { Graphics } from "pixi.js";
 import { rand } from "~/fw/Random.js";
 import { HEIGHT, TILE_SIZE } from "~/consts.js";
 import msg from "~/fw/msg.js";
+import { ColliderRect } from "~/game/ColliderRect.js";
 
 
 export class Enemy extends PPPContainer {
@@ -11,6 +12,7 @@ export class Enemy extends PPPContainer {
 
   constructor(opts = {}) {
     super(opts);
+    this.isEnemy = true;
     this.colliders = opts.colliders || [];
     this.movementRatio = opts.movementRatio || 1;
 
@@ -66,13 +68,7 @@ export class Enemy extends PPPContainer {
   }
 
   getColliders() {
-    const {x, y} = this.position;
-    return this.colliders.map((c) => {
-      const r = c.clone();
-      r.x += x;
-      r.y += y;
-      return r;
-    });
+    return this.colliders.map(c => c.offsetFrom(this));
   }
 
   crash() {
@@ -97,9 +93,9 @@ export class EnemySmall extends Enemy {
     super({
       movementRatio: 1.2,
       colliders: [
-        new Rectangle(-2, -7, 4, 14),
-        new Rectangle(-7, -2, 14, 4),
-        new Rectangle(-5, -5, 10, 10)
+        new ColliderRect(-2, -7, 4, 14, "hull"),
+        new ColliderRect(-7, -2, 14, 4, "hull"),
+        new ColliderRect(-5, -5, 10, 10, "hull")
       ],
       ...opts
     });
@@ -118,6 +114,10 @@ export class EnemySmall extends Enemy {
         this.destroy();
       }
     }));
+    msg.emit('enemyHit', {
+      destroyed: true,
+      size: 'small'
+    });
   }
 
   onPause() {
@@ -135,9 +135,9 @@ export class EnemyBig extends Enemy {
     super({
       movementRatio: 0.8,
       colliders: [
-        new Rectangle(-14, -8, 9, 16),
-        new Rectangle(5, -8, 9, 16),
-        new Rectangle(-5, -5, 10, 10)
+        new ColliderRect(-15, -8, 11, 16, "leftWing"),
+        new ColliderRect(4, -8, 11, 16, "rightWing"),
+        new ColliderRect(-2, -5, 4, 10, "hull")
       ],
       ...opts
     });
@@ -147,21 +147,53 @@ export class EnemyBig extends Enemy {
 
     this.initSpawn(opts.spawnRange);
     this.y -= 1; // fixed y pos, possibly broken after rotation :/
+
+    this.damagedPart = null;
   }
 
-  crash() {
-    super.crash();
-    this.spr.visible = false;
-    for (const x of [-8, 8]) {
-      const expl = this.addChild(createAnimation('effect/explosion', {
-        loop: false, autoplay: true, speed: 0.1,
-        onComplete: () => {
-          this.destroy();
-        }
-      }));
-      expl.x = x;
-    }
+  crash(part) {
+    if (this.damagedPart || part.name === 'hull') {
+      super.crash();
+      this.spr.visible = false;
+      for (const coll of this.colliders) {
+        const expl = this.addChild(createAnimation('effect/explosion', {
+          loop: false, autoplay: true, speed: 0.1,
+          onComplete: () => {
+            this.destroy();
+          }
+        }));
+        expl.x = Math.round(coll.x + coll.width / 2);
+        expl.y = Math.round(coll.y + coll.height / 2);
+      }
 
+      msg.emit('enemyHit', {
+        destroyed: true,
+        wasDamaged: this.damagedPart !== null,
+        size: 'big'
+      });
+    }
+    else {
+      const damagedPartIndex = this.colliders.findIndex(p => p.name === part.name);
+      this.damagedPart = this.colliders[damagedPartIndex];
+      this.colliders.splice(damagedPartIndex, 1);
+      const bounds = this.getLocalBounds();
+      const mask = new Graphics();
+      mask.rect(bounds.x, bounds.y, bounds.width, bounds.height).fill(0xff0000);
+      mask.rect(this.damagedPart.x, this.damagedPart.y, this.damagedPart.width, this.damagedPart.height).cut();
+      this.spr.mask = this.addChild(mask);
+
+      const expl = this.addChild(createAnimation('effect/explosion', {
+        loop: false, autoplay: true, speed: 0.1, removeOnComplete: true
+      }));
+      expl.x = Math.round(this.damagedPart.x + this.damagedPart.width / 2);
+      expl.y = Math.round(this.damagedPart.y + this.damagedPart.height / 2);
+
+      msg.emit('enemyHit', {
+        destroyed: false,
+        wasDamaged: false,
+        size: 'big'
+      });
+    }
   }
 
   onPause() {

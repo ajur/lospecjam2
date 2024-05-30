@@ -10,7 +10,7 @@ const colliders = {
 
 
 export class Projectile extends PPPContainer {
-  constructor({kind, x, y, vx, vy}) {
+  constructor({kind, x, y, vx, vy, shooter = null}) {
     super();
 
     this.spr = this.addChild(Sprite.from(`projectile/${kind}`));
@@ -20,6 +20,8 @@ export class Projectile extends PPPContainer {
     this.y = y;
     this.vx = vx;
     this.vy = vy;
+
+    this.shooter = shooter;
   }
 
   getCollider() {

@@ -15,7 +15,7 @@ if (!isDebugOn) {
 
 (async () => {
   const app = new Application();
-  await app.init({ preference: "webgpu", background: '#000', width: WIDTH, height: HEIGHT, antialias: false });
+  await app.init({ preference: "webgpu", background: '#000', width: WIDTH, height: HEIGHT, antialias: false, roundPixels: true });
 
   const appElem = document.querySelector('#app') ?? document.body;
   appElem.appendChild(app.canvas);
@@ -28,7 +28,7 @@ if (!isDebugOn) {
 
   const game = new Game(app);
   initInput();
-  game.mainMenu();
+  game.gotoMainMenu();
 
   const onWindowResize = () => {
     const {innerWidth, innerHeight, devicePixelRatio} = window;

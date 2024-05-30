@@ -20,16 +20,17 @@ export const anyController = new Proxy(controllers, {
 
 
 export function initInput() {
-  controllers.push(new KeyboardController('arrows', KEYMAP_ARROWS));
-  controllers.push(new KeyboardController('wsad', KEYMAP_WSAD));
+  controllers.push(new KeyboardController('Arrows', KEYMAP_ARROWS));
+  controllers.push(new KeyboardController('WASD', KEYMAP_WSAD));
 
   waitForGamepads();
 }
 
 
 export class Controller {
-  constructor(id) {
+  constructor(id, name) {
     this.id = id;
+    this.name = name;
     this.state = Object.fromEntries(KEYS.map(k => [k, false]));
   }
   get up() { return this.state.up; }
@@ -45,7 +46,7 @@ export class Controller {
 
 class KeyboardController extends Controller {
   constructor(name, keyMap) {
-    super('KBD_' + name);
+    super('KBD_' + name, name);
     this.mapKey = new Map(keyMap.map((k, idx) => [k, KEYS[idx]]));
 
     window.addEventListener('keydown', this.onKeyDown.bind(this));
@@ -76,7 +77,7 @@ class KeyboardController extends Controller {
 
 class GamepadController extends Controller {
   constructor(idx, keyMap) {
-    super('GAMEPAD_' + idx);
+    super('GAMEPAD_' + idx, `Gamepad ${idx}`);
     this.idx = idx;
     this.keyMap = keyMap
 

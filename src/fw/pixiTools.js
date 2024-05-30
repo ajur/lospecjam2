@@ -1,16 +1,25 @@
-import { AnimatedSprite, Assets, Container, Sprite } from "pixi.js";
+import { AnimatedSprite, Assets, Container } from "pixi.js";
 import { ANIMATIONS_SPRITESHEET } from "~/consts";
 
 
-export function createAnimation(name, {speed = 0.15, loop = true, autoplay = true, visible = true, onComplete, tint} = {}) {
+export function createAnimation(name, {speed = 0.15, loop = true, autoplay = true, visible = true, removeOnComplete = false, onComplete, tint} = {}) {
   const animFrames = Assets.get(ANIMATIONS_SPRITESHEET).animations[name];
   const spr = new AnimatedSprite(animFrames);
   spr.animationSpeed = speed;
   spr.loop = loop;
   spr.visible = visible;
-  onComplete != null && (spr.onComplete = onComplete);
   tint != null && (spr.tint = tint);
   autoplay && spr.play();
+
+  if (removeOnComplete) {
+    spr.onComplete = () => {
+      spr.destroy();
+      onComplete?.();
+    }
+  } else if (onComplete) {
+    spr.onComplete = onComplete;
+  }
+
   return spr;
 }
 
@@ -46,4 +55,3 @@ export class PPPContainer extends Container {
     this._position.y = Math.round(value);
   }
 }
-

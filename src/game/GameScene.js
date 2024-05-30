@@ -1,4 +1,4 @@
-import { FONT_HEADER, HEIGHT, TILE_SIZE, WIDTH } from "~/consts";
+import { COLOR_STEEL_BLUE, FONT_HEADER, HEIGHT, TILE_SIZE, WIDTH } from "~/consts";
 import { BitmapText, Container, Graphics, Ticker } from "pixi.js";
 import gsap from "gsap";
 
@@ -8,6 +8,10 @@ import { addDebugPane } from "~/fw/debug";
 import msg from "~/fw/msg.js";
 import { EnemyBig, EnemySmall } from "~/game/Enemy.js";
 import { rand } from "~/fw/Random.js";
+import { PPPContainer } from "~/fw/pixiTools.js";
+import { Menu } from "~/ui/Menu.js";
+import { HUD } from "~/ui/HUD.js";
+import { Background } from "~/game/Background.js";
 
 
 const LAST_LANE = HEIGHT - 12;
@@ -15,11 +19,16 @@ const LANE_STEP = 18;
 const LANES_COUNT = 3;
 
 
-export class GameScene extends Container {
-  constructor(game, player1controller, player2controller) {
+export class GameScene extends PPPContainer {
+
+  constructor(game) {
     super();
 
     this.game = game;
+
+    this.bkg = this.addChild(new Background({
+      width: WIDTH, height: HEIGHT, tileSize: TILE_SIZE
+    }));
 
     this.map = this.addChild(new Map({
       width: WIDTH, height: HEIGHT, tileSize: TILE_SIZE, randomize: game.settings.randomMap
@@ -28,30 +37,30 @@ export class GameScene extends Container {
     this.projectiles = this.addChild(new Container());
 
     this.enemies = this.addChild(new Container());
+    this.spawnEveryNTile = 3;
     this.lastSpawn = -2;
+
 
     this.lanes = getLanes(LANES_COUNT);
 
-    this.player1 = player1controller && this.addChild(
+    this.player1 = game.player1controller && this.addChild(
       new PlayerShip({
         type: "red",
-        controller: player1controller,
+        controller: game.player1controller,
         lanes: this.lanes,
         freeMovement: game.settings.freeMovement,
-        addProjectile: (p) => {
-          console.log('add projectile', p);
-          this.projectiles.addChild(p)
-          console.log('projectiles: ', this.projectiles.children.length)
-        }
+        addProjectile: (p) => this.projectiles.addChild(p),
+        onEnergyChanged: (v) => this.hud.setPlayer1Energy(v)
       })
     );
-    this.player2 = player2controller && this.addChild(
+    this.player2 = game.player2controller && this.addChild(
       new PlayerShip({
         type: "green",
-        controller: player2controller,
+        controller: game.player2controller,
         lanes: this.lanes,
         freeMovement: game.settings.freeMovement,
-        addProjectile: (p) => this.projectiles.addChild(p)
+        addProjectile: (p) => this.projectiles.addChild(p),
+        onEnergyChanged: (v) => this.hud.setPlayer2Energy(v)
       })
     );
 
@@ -60,11 +69,14 @@ export class GameScene extends Container {
     this.collidersBoxes = this.addChild(new Graphics());
     this.collidersBoxes.renderable = false;
 
+    this.hud = this.addChild(new HUD({game}));
+
     this.isRunning = true;
     this.testCollisions = false;
 
     this.distance = 0;
     this.level = 0;
+    this.score = 0;
 
     this.baseSpeed = 32; // px per second
     this.speed = 0; // px per second
@@ -72,13 +84,15 @@ export class GameScene extends Container {
     this.removeDebugPane = addDebugPane("GameScene", (pane) => {
       pane.expanded = false;
       pane.addBinding(this, "baseSpeed", { min: 1, max: 256, step: 1 });
-      pane.addBinding(this, "level", {min: 1, max: 256, step: 1});
+      pane.addBinding(this, "level", {readonly: true});
+      pane.addBinding(this, "score", {readonly: true});
       pane.addBinding(this, "distance", {readonly: true});
       pane.addBinding(this, "distanceTiles", {readonly: true});
       pane.addBinding(this, "showCollisions");
     });
 
     msg.on('keydown', this.onKeyDown, this);
+    msg.on('enemyHit', this.onEnemyHit, this);
 
     Ticker.shared.add(this.moveOnTick, this);
 
@@ -107,8 +121,14 @@ export class GameScene extends Container {
     }});
   }
 
+  addPoints(val) {
+    this.score += val;
+    this.hud.setScore(this.score);
+  }
+
   destroy(options) {
     msg.off('keydown', this.onKeyDown, this);
+    msg.off('enemyHit', this.onEnemyHit, this);
     Ticker.shared.remove(this.moveOnTick, this);
     gsap.killTweensOf(this);
     this.removeDebugPane();
@@ -119,8 +139,11 @@ export class GameScene extends Container {
     if (this.isRunning) {
       // move map, update positions
       const dy = this.speed * deltaMS * 0.001;
-      this.distance += dy;
+      const dTiles = this.distanceTiles;
+
+      this.bkg.move(dy);
       this.map.move(dy);
+
       for (const en of this.enemies.children) {
         en.update(dy);
       }
@@ -143,7 +166,7 @@ export class GameScene extends Container {
       }
 
       // spawn enemies
-      if (this.distanceTiles % 2 === 0 && this.lastSpawn !== this.distanceTiles) {
+      if (this.distanceTiles % this.spawnEveryNTile === 0 && this.lastSpawn !== this.distanceTiles) {
         this.lastSpawn = this.distanceTiles;
         const spawnRange = this.map.getCurrentSpawnRange();
         const EnemyCon = rand.bool() ? EnemySmall : EnemyBig;
@@ -152,57 +175,74 @@ export class GameScene extends Container {
           addProjectile: (p) => this.projectiles.addChild(p)
         }));
       }
+
+      // points for travel
+      this.distance += dy;
+      const ddTiles = this.distanceTiles - dTiles;
+      if (ddTiles > 0) {
+        this.addPoints(ddTiles);
+      }
     }
   }
 
   onKeyDown(key) {
-    if (key === 'select') {
-      if (this.isRunning) {
-        this.pause();
-      } else {
-        this.game.mainMenu();
-      }
-    }
-    if (!this.isRunning && this.testCollisions && (key === 'start' || key === 'primary')) {
-      this.resume();
+    if (this.game.inTransition) return;
+    if (this.isRunning && key === 'select') {
+      this.pause();
     }
   }
 
   resume() {
     this.isRunning = true;
     msg.emit('resume');
-    this.pauseText.destroy();
-    this.pauseText = null;
+    this.pauseMenu.destroy();
   }
 
   pause() {
     this.isRunning = false;
     msg.emit('pause');
 
-    this.pauseText = this.addChild(
-      new BitmapText({ text: "Pause", style: FONT_HEADER })
-    );
-    this.pauseText.x = Math.floor(WIDTH / 2 - this.pauseText.width / 2);
-    this.pauseText.y = Math.floor(HEIGHT / 2 - this.pauseText.height / 2);
+    this.pauseMenu = this.addChild(new Menu({
+      title: "Paused",
+      isSubMenu: false,
+      game: this.game,
+      background: true,
+      entriesSpec: [
+        {label: "Resume", action: () => this.resume()},
+        {label: "Withdraw", action: () => this.game.gotoMainMenu()}
+      ]
+    }));
+    this.pauseMenu.x = Math.floor(WIDTH / 2);
+    this.pauseMenu.y = 96;
   }
 
   gameOver() {
-    const go = this.addChild(
-      new BitmapText({ text: "Game Over", style: FONT_HEADER })
-    );
-    go.x = Math.floor(WIDTH / 2 - go.width / 2);
-    go.y = Math.floor(HEIGHT / 2 - go.height / 2);
-    const onKeyDown = (key) => {
-      if (key === "select" || key === "start") {
-        msg.off("keydown", onKeyDown);
-        gsap.killTweensOf(this);
-        this.game.mainMenu();
-      }
-    };
-    msg.on("keydown", onKeyDown);
+    this.isRunning = false;
+    this.projectiles.visible = false;
+
+    const menu = this.addChild(new Menu({
+      title: "Game Over",
+      isSubMenu: false,
+      background: true,
+      game: this.game,
+      innerText: new BitmapText({
+        text: "" + this.score,
+        style: {...FONT_HEADER, fill: COLOR_STEEL_BLUE}
+      }),
+      entriesSpec: [{
+        label: "Main menu",
+        action: () => {
+          gsap.killTweensOf(this);
+          this.game.gotoMainMenu();
+        }},
+      ],
+      delayInput: 500
+    }));
+    menu.x = Math.floor(WIDTH / 2);
+    menu.y = 96;
   }
 
-  shipCollided({ship, shipPart, ship2, ship2Part, enemy}) {
+  shipCollided({ship, shipPart, ship2, ship2Part, enemy, enemyPart}) {
     this.testCollisions = false;
     ship.crash(shipPart);
 
@@ -214,11 +254,24 @@ export class GameScene extends Container {
     }
 
     if (enemy) {
-      enemy.crash();
+      this.enemyCollided({enemy, enemyPart});
     }
 
     this.smoothStop();
     this.gameOver();
+  }
+
+  enemyCollided({enemy, enemyPart}) {
+    enemy.crash(enemyPart);
+  }
+
+  onEnemyHit({destroyed = false, wasDamaged = false, size}) {
+    let pointsToAdd = 5;
+    if (destroyed) {
+      if (size === "small") pointsToAdd += 5;
+      if (size === "big") pointsToAdd +=  wasDamaged ? 10 : 20;
+    }
+    this.addPoints(pointsToAdd);
   }
 
   smoothStop() {
@@ -243,7 +296,7 @@ export class GameScene extends Container {
         for (const s2col of ship2Colliders) {
           if (s1col.intersects(s2col)) {
             return this.shipCollided({
-              ship: player1, shipPart: s1col, ship2: player2, ship2part: s2col
+              ship: player1, shipPart: s1col, ship2: player2, ship2Part: s2col
             });
           }
         }
@@ -275,7 +328,7 @@ export class GameScene extends Container {
           for (const shipCol of shipColliders) {
             if (shipCol.intersects(enemyCol)) {
               this.shipCollided({
-                ship: player, shipPart: shipCol, enemy
+                ship: player, shipPart: shipCol, enemy, enemyPart: enemyCol
               });
               return true;
             }
@@ -288,10 +341,28 @@ export class GameScene extends Container {
   testProjectileCollisions() {
     for (const projectile of this.projectiles.children) {
       const pRect = projectile.getCollider();
-      if (this.testProjectileCollidesWithEnemy(pRect, projectile) || this.map.getCollidersForBounds(pRect).length > 0) {
-        projectile.destroy({children: true});
+
+      let collision = this.testProjectileCollidesWithPlayers(pRect, projectile.shooter);
+      !collision && !projectile.shooter?.isEnemy && (collision = this.testProjectileCollidesWithEnemy(pRect));
+      !collision && (collision = this.map.getCollidersForBounds(pRect).length > 0);
+
+      if (collision?.ship) this.shipCollided(collision);
+      if (collision?.enemy) this.enemyCollided(collision);
+      if (collision) projectile.destroy({children: true});
+    }
+  }
+
+  testProjectileCollidesWithPlayers(pRect, dontCollideWith) {
+    for (const player of [this.player1, this.player2]) {
+      if (player && player !== dontCollideWith) {
+        for (const collider of player.getColliders()) {
+          if (pRect.intersects(collider)) {
+            return {ship: player, shipPart: collider};
+          }
+        }
       }
     }
+    return false;
   }
 
   testProjectileCollidesWithEnemy(pRect) {
@@ -299,8 +370,7 @@ export class GameScene extends Container {
       if (!enemy.alive) continue;
       for (const collider of enemy.getColliders()) {
         if (pRect.intersects(collider)) {
-          enemy.crash();
-          return true;
+          return {enemy, enemyPart: collider};
         }
       }
     }

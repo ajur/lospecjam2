@@ -118,26 +118,36 @@ function parseEntities(entities) {
 
 function parseTilesets(ldtkFile) {
   const intGrids = ldtkFile.defs.layers.filter(l => l.__type === 'IntGrid' && l.autoRuleGroups.length > 0);
-  
+
   return Object.fromEntries(intGrids.map(layerDef => {
     const tilesetDef = ldtkFile.defs.tilesets.find(td => td.uid === layerDef.tilesetDefUid);
     const idToPx = tilesetIdToPxMapper(tilesetDef);
     return [
       layerDef.identifier.toLowerCase(),
-      parseTilet(layerDef, idToPx)
+      parseTile(layerDef, idToPx)
     ];
   }));
 }
 
-function parseTilet(layerDef, idToPx) {
+function parseTile(layerDef, idToPx) {
   const tiles = [];
   for (const ruleGroup of layerDef.autoRuleGroups) {
     for (const rule of ruleGroup.rules) {
-      const tile = idToPx(rule.tileRectsIds[0][0]); // TODO handle multiple?
+      let tile;
+      if (rule.tileRectsIds.length === 0) {
+        continue;
+      } else if (rule.tileRectsIds.length === 1) {
+        tile = idToPx(rule.tileRectsIds[0][0]);  // TODO bigger?
+      } else if (rule.tileRectsIds.length > 1) {
+        tile = {
+          rects: rule.tileRectsIds.map(rids => idToPx(rids[0]))
+        };
+      }
       tile.pattern = rule.pattern;
       if (tile.pattern.length === 1) {
         tile.pattern = [0, 0, 0, 0, tile.pattern[0], 0, 0, 0, 0];
       }
+      tile.chance = rule.chance;
       tiles.push(tile);
     }
   }
