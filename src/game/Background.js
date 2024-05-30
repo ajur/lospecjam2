@@ -28,13 +28,18 @@ export class Background extends Container {
     this.redrawTiles();
 
     this._tilemapOffset = 0;
-    this.moveRatio = 1;
+    this.moveRatio = 0.04
 
-    this.removeDebugPane = addDebugPane('Map', (pane) => {
+    this.removeDebugPane = addDebugPane('Background', (pane) => {
       // pane.expanded = false;
       pane.addBinding(this, '_tilemapOffset', {readonly: true});
-      pane.addBinding(this, 'moveRatio', {min: 0, max: 1, step: 0.01});
+      pane.addBinding(this, 'moveRatio', {min: 0, max: 1, step: 0.001});
     });
+  }
+
+  destroy(options) {
+    this.removeDebugPane();
+    super.destroy({children: true, ...options});
   }
 
   move(dy) {
@@ -44,7 +49,7 @@ export class Background extends Container {
       this.addRow();
       this.redrawTiles();
     }
-    this.tilemap.y = Math.floor(this._tilemapOffset);
+    this.tilemap.y = Math.round(this._tilemapOffset);
   }
 
   addRow() {

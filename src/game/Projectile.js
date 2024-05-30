@@ -1,5 +1,4 @@
-import { PPPContainer } from "~/fw/pixiTools.js";
-import { Rectangle, Sprite } from "pixi.js";
+import { Container, Rectangle, Sprite } from "pixi.js";
 import { HEIGHT, WIDTH } from "~/consts.js";
 
 
@@ -9,7 +8,7 @@ const colliders = {
 }
 
 
-export class Projectile extends PPPContainer {
+export class Projectile extends Container {
   constructor({kind, x, y, vx, vy, shooter = null}) {
     super();
 

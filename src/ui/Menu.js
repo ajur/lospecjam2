@@ -1,6 +1,6 @@
-import { BitmapText, Graphics } from "pixi.js";
+import { BitmapText, Container, Graphics } from "pixi.js";
 import msg from "~/fw/msg.js";
-import { createAnimation, PPPContainer } from "~/fw/pixiTools.js";
+import { createAnimation } from "~/fw/pixiTools.js";
 import { COLOR_BLACK, COLOR_GRAY, COLOR_STEEL_BLUE, COLOR_WHITE, FONT_BIG, FONT_HEADER } from "~/consts.js";
 
 const MENU_ITEM_COLOR = COLOR_GRAY;
@@ -9,7 +9,7 @@ const BKG_PADDING = 6;
 const BKG_COLOR = COLOR_BLACK;
 const BKG_FRAME_COLOR = COLOR_STEEL_BLUE;
 
-export class Menu extends PPPContainer {
+export class Menu extends Container {
   constructor({title, game, entriesSpec = [], isSubMenu = true, background = false, innerText, delayInput = 0}) {
     super();
 

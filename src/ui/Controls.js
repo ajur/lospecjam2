@@ -1,7 +1,6 @@
-import { PPPContainer } from "~/fw/pixiTools.js";
 import { Menu } from "~/ui/Menu.js";
 import { COLOR_STEEL_BLUE, FONT_SMALL, WIDTH } from "~/consts.js";
-import { BitmapText, Sprite } from "pixi.js";
+import { BitmapText, Container, Sprite } from "pixi.js";
 
 const CONTROLS_TEXT = `
 Controls in this game imitate 8 button gamepad.
@@ -23,7 +22,7 @@ ${" "}
 `
 
 
-export class Controls extends PPPContainer {
+export class Controls extends Container {
   constructor(game) {
     super();
     this.game = game;

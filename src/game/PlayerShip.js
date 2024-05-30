@@ -1,9 +1,9 @@
-import { Sprite, Texture, Ticker } from 'pixi.js';
+import { Container, Sprite, Texture, Ticker } from 'pixi.js';
 import gsap from 'gsap';
 
 import { addDebugPane } from '~/fw/debug';
 import { HEIGHT } from '~/consts';
-import { createAnimation, PPPContainer } from '~/fw/pixiTools';
+import { createAnimation } from '~/fw/pixiTools';
 import { clamp } from '~/fw/tools';
 import msg from "~/fw/msg.js";
 import { Projectile } from "~/game/Projectile.js";
@@ -31,7 +31,7 @@ const SHIP_PROJECTILE = {
 };
 
 
-export class PlayerShip extends PPPContainer {
+export class PlayerShip extends Container {
 
   #hasShield = false;
   #moveTween;

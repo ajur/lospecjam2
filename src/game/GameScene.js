@@ -8,7 +8,6 @@ import { addDebugPane } from "~/fw/debug";
 import msg from "~/fw/msg.js";
 import { EnemyBig, EnemySmall } from "~/game/Enemy.js";
 import { rand } from "~/fw/Random.js";
-import { PPPContainer } from "~/fw/pixiTools.js";
 import { Menu } from "~/ui/Menu.js";
 import { HUD } from "~/ui/HUD.js";
 import { Background } from "~/game/Background.js";
@@ -19,7 +18,7 @@ const LANE_STEP = 18;
 const LANES_COUNT = 3;
 
 
-export class GameScene extends PPPContainer {
+export class GameScene extends Container {
 
   constructor(game) {
     super();

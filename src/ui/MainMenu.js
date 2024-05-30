@@ -1,12 +1,11 @@
-import { BitmapText, Container, Graphics, Sprite } from "pixi.js";
+import { BitmapText, Container } from "pixi.js";
 import { COLOR_GREEN, COLOR_ORANGE, COLOR_RED, COLOR_YELLOW, FONT_SMALL, HEIGHT, WIDTH } from "~/consts.js";
 import { addDebugPane } from "~/fw/debug.js";
 import msg from "~/fw/msg.js";
 import { Menu } from "~/ui/Menu.js";
-import { PPPContainer } from "~/fw/pixiTools.js";
 
 
-export class MainMenu extends PPPContainer {
+export class MainMenu extends Container {
   constructor(game) {
     super();
 

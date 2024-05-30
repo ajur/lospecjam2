@@ -92,7 +92,7 @@ export class Map extends Container {
       this.redrawIntGridViz();
       ++this.rowsGenerated;
     }
-    this.tilemap.y = Math.floor(this._tilemapOffset);
+    this.tilemap.y = Math.round(this._tilemapOffset);
   }
 
   addRow() {

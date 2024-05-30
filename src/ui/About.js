@@ -1,7 +1,6 @@
-import { PPPContainer } from "~/fw/pixiTools.js";
 import { Menu } from "~/ui/Menu.js";
 import { COLOR_STEEL_BLUE, FONT_SMALL, WIDTH } from "~/consts.js";
-import { BitmapText } from "pixi.js";
+import { BitmapText, Container } from "pixi.js";
 
 
 const ABOUT_TEXT = `
@@ -21,7 +20,7 @@ const WWW_LOSPEC_JAM = "https://itch.io/jam/lospec-jam-2";
 const WWW_LOSPEC = "https://lospec.com/";
 
 
-export class About extends PPPContainer {
+export class About extends Container {
   constructor(game) {
     super();
     this.game = game;

@@ -9,7 +9,6 @@ import {
   HEIGHT,
   WIDTH
 } from "~/consts.js";
-import { addDebugPane } from "~/fw/debug.js";
 import { clamp } from "~/fw/tools.js";
 
 

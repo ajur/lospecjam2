@@ -1,12 +1,12 @@
-import { createAnimation, PPPContainer } from "~/fw/pixiTools.js";
-import { Graphics } from "pixi.js";
+import { createAnimation } from "~/fw/pixiTools.js";
+import { Container, Graphics } from "pixi.js";
 import { rand } from "~/fw/Random.js";
 import { HEIGHT, TILE_SIZE } from "~/consts.js";
 import msg from "~/fw/msg.js";
 import { ColliderRect } from "~/game/ColliderRect.js";
 
 
-export class Enemy extends PPPContainer {
+export class Enemy extends Container {
 
   #moveTween;
 

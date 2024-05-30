@@ -1,10 +1,9 @@
-import { PPPContainer } from "~/fw/pixiTools.js";
 import { Menu } from "~/ui/Menu.js";
 import { COLOR_STEEL_BLUE, FONT_HEADER, WIDTH } from "~/consts.js";
-import { BitmapText } from "pixi.js";
+import { BitmapText, Container } from "pixi.js";
 
 
-export class Scoreboard extends PPPContainer {
+export class Scoreboard extends Container {
   constructor(game) {
     super();
     this.game = game;

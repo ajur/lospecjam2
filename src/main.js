@@ -15,7 +15,7 @@ if (!isDebugOn) {
 
 (async () => {
   const app = new Application();
-  await app.init({ preference: "webgpu", background: '#000', width: WIDTH, height: HEIGHT, antialias: false, roundPixels: true });
+  await app.init({ preference: "webgl", background: '#000', width: WIDTH, height: HEIGHT, antialias: false, roundPixels: true });
 
   const appElem = document.querySelector('#app') ?? document.body;
   appElem.appendChild(app.canvas);
