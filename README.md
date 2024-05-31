@@ -17,9 +17,11 @@ Optional:
 - 16x16 tiles, used on up to 4 background layers, can scroll independently horizontally/vertically
 - unlimited 256x256px image textures
 
-**Web or mobile:** https://ajur.pl/lospecjam2/  
+**Web or mobile:** https://ajur.pl/lospecjam2/
 
 ### Changelog:
+#### 0.9
+- Jam version, mostly done, still some parts lacking, but playable!
 #### 0.2
 - Second player, gamepad support
 - Walls, movement, collisions
@@ -27,6 +29,6 @@ Optional:
 - Initial commit
 
 ### Some prod info:
-Makeshift game engine custom built on top of [Pixi.js](https://pixijs.com/).  
-Art done in [Aseprite](https://www.aseprite.org/).  
+Makeshift game engine custom built on top of [Pixi.js](https://pixijs.com/).
+Art done in [Aseprite](https://www.aseprite.org/).
 I've kinda abused [LDtk](https://ldtk.io/) level editor, and used it to export sprites and tileset data.
