@@ -87,7 +87,6 @@ export class Menu extends Container {
 
   execAction() {
     const {label, action, context} = this.entriesSpec[this.selected];
-    console.log("Menu exec", label);
     action.call(context ?? null);
   }
 

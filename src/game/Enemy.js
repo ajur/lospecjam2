@@ -5,6 +5,7 @@ import { HEIGHT, TILE_SIZE } from "~/consts.js";
 import msg from "~/fw/msg.js";
 import { ColliderRect } from "~/game/ColliderRect.js";
 import { playSound } from "~/fw/audio.js";
+import gsap from "gsap";
 
 
 export class Enemy extends Container {

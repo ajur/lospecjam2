@@ -6,6 +6,8 @@ import { HEIGHT, SCOREBOARD_SIZE, WIDTH } from "~/consts.js";
 import { Scoreboard } from "~/ui/Scoreboard.js";
 import { Controls } from "~/ui/Controls.js";
 import { About } from "~/ui/About.js";
+import gsap from "gsap";
+
 
 const DEFAULT_SETTINGS = {
   friendlyFire: true,
