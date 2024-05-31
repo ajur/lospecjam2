@@ -8,6 +8,7 @@ import { clamp } from '~/fw/tools';
 import msg from "~/fw/msg.js";
 import { Projectile } from "~/game/Projectile.js";
 import { ColliderRect } from "~/game/ColliderRect.js";
+import { playSound } from "~/fw/audio.js";
 
 
 export const RED_SHIP = 'red';
@@ -37,6 +38,8 @@ export class PlayerShip extends Container {
   #moveTween;
   #autoShotTimer = 0;
   #energy = 1;
+
+  #engineSound;
 
   constructor({type, controller, lanes, freeMovement, addProjectile, onEnergyChanged}) {
     super();
@@ -82,6 +85,7 @@ export class PlayerShip extends Container {
     this.energyLossConstant = 0.00001;
     this.energyLossYMovement = 0.001;
     this.energyLossShoot = 0.01;
+    this.energyCharged = 0.01;
 
     this.acceptInput = false;
 
@@ -107,6 +111,7 @@ export class PlayerShip extends Container {
   }
 
   destroy(options) {
+    this.#engineSound?.stop();
     Ticker.shared.remove(this.onTickerUpdate, this);
     msg.off('pause', this.onPause, this);
     msg.off('resume', this.onResume, this);
@@ -152,6 +157,10 @@ export class PlayerShip extends Container {
     gsap.to(this, {y: yTarget, duration: 1, onComplete: () => {
       this.acceptInput = true;
     }});
+    this.#engineSound = playSound("engine");
+    this.#engineSound.loopStart = 0.1;
+    this.#engineSound.loopEnd = 0.95;
+    this.#engineSound.loop = true;
   }
 
   crash(part) {
@@ -161,6 +170,8 @@ export class PlayerShip extends Container {
     this.shieldSpr.visible = false;
     this.spr.visible = false;
     this.addChild(createAnimation('effect/explosion', {loop: false, autoplay: true, speed: 0.1}));
+    this.#engineSound?.stop();
+    playSound("explosionPlayer");
   }
 
   withdraw() {
@@ -169,6 +180,7 @@ export class PlayerShip extends Container {
     this.#setTexture(1);
     gsap.killTweensOf(this);
     gsap.to(this, {y: HEIGHT + 10, duration: 1, ease: "back.in"});
+    this.#engineSound?.stop();
   }
 
   shoot() {
@@ -180,6 +192,11 @@ export class PlayerShip extends Container {
       vy: -this.shotVelocity,
       shooter: this
     }));
+    playSound("laser");
+  }
+
+  charge(deltaTime) {
+    this.energy += this.energyCharged * deltaTime;
   }
 
   onTickerUpdate({deltaTime, deltaMS}) {

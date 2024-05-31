@@ -20,6 +20,7 @@
     "@assetpack/plugin-manifest": "^0.8.0",
     "@pixi/tilemap": "^5.0.1",
     "gsap": "^3.12.5",
+    "jsfxr": "^1.2.2",
     "pixi.js": "^8.1.0",
     "simplex-noise": "^4.0.1",
     "tweakpane": "^4.0.3"

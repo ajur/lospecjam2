@@ -27,6 +27,7 @@ if (!isDebugOn) {
   await preloader.loadAssets();
 
   const game = new Game(app);
+  window.GAME = game;
   initInput();
   game.gotoMainMenu();
 

@@ -11,11 +11,15 @@ import { rand } from "~/fw/Random.js";
 import { Menu } from "~/ui/Menu.js";
 import { HUD } from "~/ui/HUD.js";
 import { Background } from "~/game/Background.js";
+import { playSound } from "~/fw/audio.js";
+import { Charger } from "~/game/Charger.js";
 
 
 const LAST_LANE = HEIGHT - 12;
 const LANE_STEP = 18;
 const LANES_COUNT = 3;
+
+const TILES_PER_LEVEL = 3 * HEIGHT / TILE_SIZE;
 
 
 export class GameScene extends Container {
@@ -28,6 +32,9 @@ export class GameScene extends Container {
     this.bkg = this.addChild(new Background({
       width: WIDTH, height: HEIGHT, tileSize: TILE_SIZE
     }));
+
+    this.chargers = this.addChild(new Container());
+    this.chargerSpawnChance = 0.05;
 
     this.map = this.addChild(new Map({
       width: WIDTH, height: HEIGHT, tileSize: TILE_SIZE, randomize: game.settings.randomMap
@@ -70,7 +77,7 @@ export class GameScene extends Container {
 
     this.hud = this.addChild(new HUD({game}));
 
-    this.isRunning = true;
+    this.isRunning = false;
     this.testCollisions = false;
 
     this.distance = 0;
@@ -81,17 +88,19 @@ export class GameScene extends Container {
     this.speed = 0; // px per second
 
     this.removeDebugPane = addDebugPane("GameScene", (pane) => {
-      pane.expanded = false;
+      // pane.expanded = false;
       pane.addBinding(this, "baseSpeed", { min: 1, max: 256, step: 1 });
       pane.addBinding(this, "level", {readonly: true});
       pane.addBinding(this, "score", {readonly: true});
       pane.addBinding(this, "distance", {readonly: true});
       pane.addBinding(this, "distanceTiles", {readonly: true});
+      pane.addBinding(this, "chargerSpawnChance", {min: 0, max: 1, step: 0.01});
       pane.addBinding(this, "showCollisions");
     });
 
     msg.on('keydown', this.onKeyDown, this);
     msg.on('enemyHit', this.onEnemyHit, this);
+    msg.on('chargerHit', this.onChargerHit, this);
 
     Ticker.shared.add(this.moveOnTick, this);
 
@@ -115,6 +124,7 @@ export class GameScene extends Container {
       yStart: this.lanes[p2Lane] + this.lanes.length * LANE_STEP,
       currentLane: p2Lane
     });
+    this.isRunning = true;
     gsap.to(this, {speed: this.baseSpeed, duration: 1, onComplete: () => {
       this.testCollisions = true;
     }});
@@ -128,6 +138,7 @@ export class GameScene extends Container {
   destroy(options) {
     msg.off('keydown', this.onKeyDown, this);
     msg.off('enemyHit', this.onEnemyHit, this);
+    msg.off('chargerHit', this.onChargerHit, this);
     Ticker.shared.remove(this.moveOnTick, this);
     gsap.killTweensOf(this);
     this.removeDebugPane();
@@ -136,15 +147,24 @@ export class GameScene extends Container {
 
   moveOnTick({ deltaTime, deltaMS }) {
     if (this.isRunning) {
+      if (this.testCollisions) {
+        this.speed = this.baseSpeed + this.level;
+      }
       // move map, update positions
       const dy = this.speed * deltaMS * 0.001;
       const dTiles = this.distanceTiles;
+
+      this.level = Math.floor(this.distanceTiles / TILES_PER_LEVEL);
+      this.hud.setLevel(this.level);
 
       this.bkg.move(dy);
       this.map.move(dy);
 
       for (const en of this.enemies.children) {
         en.update(dy);
+      }
+      for (const ch of this.chargers.children) {
+        ch.update(dy);
       }
       for (const proj of this.projectiles.children) {
         proj.update(deltaTime);
@@ -160,6 +180,8 @@ export class GameScene extends Container {
 
         this.testProjectileCollisions();
 
+        this.testPlayersCharging(this.player1, this.player2, deltaTime);
+
         // debug stuff
         this.drawCollisionBoxes()
       }
@@ -168,11 +190,15 @@ export class GameScene extends Container {
       if (this.distanceTiles % this.spawnEveryNTile === 0 && this.lastSpawn !== this.distanceTiles) {
         this.lastSpawn = this.distanceTiles;
         const spawnRange = this.map.getCurrentSpawnRange();
-        const EnemyCon = rand.bool() ? EnemySmall : EnemyBig;
-        this.enemies.addChild(new EnemyCon({
-          spawnRange,
-          addProjectile: (p) => this.projectiles.addChild(p)
-        }));
+        if (rand.next() < this.chargerSpawnChance) {
+          this.chargers.addChild(new Charger({spawnRange}));
+        } else {
+          const EnemyCon = rand.bool() ? EnemySmall : EnemyBig;
+          this.enemies.addChild(new EnemyCon({
+            spawnRange,
+            addProjectile: (p) => this.projectiles.addChild(p)
+          }));
+        }
       }
 
       // points for travel
@@ -218,6 +244,13 @@ export class GameScene extends Container {
   gameOver() {
     this.isRunning = false;
     this.projectiles.visible = false;
+
+    this.game.addScore({
+      score: this.score,
+      player1: !!this.player1,
+      player2: !!this.player2,
+      ...this.game.settings
+    });
 
     const menu = this.addChild(new Menu({
       title: "Game Over",
@@ -270,6 +303,12 @@ export class GameScene extends Container {
       if (size === "small") pointsToAdd += 5;
       if (size === "big") pointsToAdd +=  wasDamaged ? 10 : 20;
     }
+    this.addPoints(pointsToAdd);
+  }
+
+  onChargerHit({destroyed, wasCharging}) {
+    let pointsToAdd = 0;
+    if (destroyed) pointsToAdd += wasCharging ? 30 : 100;
     this.addPoints(pointsToAdd);
   }
 
@@ -342,12 +381,26 @@ export class GameScene extends Container {
       const pRect = projectile.getCollider();
 
       let collision = this.testProjectileCollidesWithPlayers(pRect, projectile.shooter);
-      !collision && !projectile.shooter?.isEnemy && (collision = this.testProjectileCollidesWithEnemy(pRect));
-      !collision && (collision = this.map.getCollidersForBounds(pRect).length > 0);
-
-      if (collision?.ship) this.shipCollided(collision);
-      if (collision?.enemy) this.enemyCollided(collision);
-      if (collision) projectile.destroy({children: true});
+      if (collision) {
+        projectile.destroy({children: true});
+        this.shipCollided(collision);
+        return;
+      }
+      collision = this.testProjectileCollidesWithEnemy(pRect);
+      if (collision) {
+        projectile.destroy({children: true});
+        this.enemyCollided(collision);
+        return;
+      }
+      collision = this.testProjectileCollidesCharger(pRect);
+      if (collision) {
+        collision.charger.crash();
+        projectile.destroy({children: true});
+      }
+      if (this.map.getCollidersForBounds(pRect).length > 0) {
+        projectile.destroy({children: true});
+        playSound("laserHitWall");
+      }
     }
   }
 
@@ -376,6 +429,43 @@ export class GameScene extends Container {
     return false;
   }
 
+  testProjectileCollidesCharger(pRect) {
+    for (const charger of this.chargers.children) {
+      if (!charger.alive) continue;
+      if (pRect.intersects(charger.getCollider())) {
+        return {charger};
+      }
+    }
+    return false;
+  }
+
+  testPlayersCharging(p1, p2, deltaTime) {
+    for (const charger of this.chargers.children) {
+      if (charger.alive) {
+        const chargerCollider = charger.getCollider();
+        let isCharging = false;
+        if (this.testChargerChargingShip(chargerCollider, p1)) {
+          p1.charge(deltaTime);
+          isCharging = true;
+        }
+        if (this.testChargerChargingShip(chargerCollider, p2)) {
+          p2.charge(deltaTime);
+          isCharging = true;
+        }
+        charger.isCharging = isCharging;
+      }
+    }
+  }
+
+  testChargerChargingShip(chargerCol, ship) {
+    if (!ship) return false;
+    const colliders = ship.getColliders();
+    for (const shipCol of colliders) {
+      if (shipCol.intersects(chargerCol)) {
+        return true;
+      }
+    }
+  }
 
   get showCollisions() {
     return this.collidersBoxes.renderable;
@@ -432,9 +522,4 @@ export class GameScene extends Container {
 
 function getLanes(num) {
   return Array.from({length: num}, (_, idx) => LAST_LANE - idx * LANE_STEP).sort();
-}
-
-
-function testCollisions({map, players, enemies, projectiles}) {
-  const [player1, player2] = players;
 }

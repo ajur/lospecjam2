@@ -9,13 +9,21 @@ export function localStoredData(key, defaults) {
         return {...defaults};
     }
 
-    return new Proxy(Object.assign({}, defaults, JSON.parse(localStorage.getItem(key))), {
-        set(target) {
-            const resp = Reflect.set(...arguments);
-            localStorage.setItem(key, JSON.stringify(target));
-            return resp;
-        }
-    });
+    const handler = {
+      set(target) {
+        const resp = Reflect.set(...arguments);
+        localStorage.setItem(key, JSON.stringify(target));
+        return resp;
+      }
+    };
+
+    if (Array.isArray(defaults)) {
+      return new Proxy([...defaults, ...(JSON.parse(localStorage.getItem(key)) ?? [])], handler);
+    }
+    else if (typeof defaults === "object") {
+      return new Proxy(Object.assign({}, defaults, JSON.parse(localStorage.getItem(key))), handler);
+    }
+    console.warn("localStoredData supports only objects and arrays");
 }
 
 

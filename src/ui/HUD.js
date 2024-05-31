@@ -31,6 +31,7 @@ export class HUD extends Container {
     this.leftBarMask = this.createLeftBar();
     this.rightBarMask = this.createRightBar();
 
+    // this.level = this.createLevel();
     this.score = this.createScore();
   }
 
@@ -42,6 +43,10 @@ export class HUD extends Container {
   setPlayer2Energy(val) {
     this.rightEnergy = val;
     if (!this.hasRedPlayer) this.leftEnergy = val;
+  }
+
+  setLevel(val) {
+    // this.level.text = '' + val;
   }
 
   setScore(val) {
@@ -113,6 +118,21 @@ export class HUD extends Container {
     mask.fill(0xffffff);
     bar.mask = mask;
     return this.addChild(mask);
+  }
+
+  createLevel() {
+    const score = new BitmapText({
+      text: 0,
+      style: {
+        ...FONT_HEADER,
+        align: "left",
+        fill: COLOR_WHITE
+      },
+      x: 3,
+      y: 0
+    });
+    score.anchor.set(0, 0);
+    return this.addChild(score);
   }
 
   createScore() {

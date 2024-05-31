@@ -1,6 +1,7 @@
 import { gsap } from "gsap";
 import { Assets } from "pixi.js";
 import msg from "./msg";
+import { initAudio } from "./audio";
 
 let onProgress;
 let onLoaded;
@@ -43,6 +44,8 @@ async function loadAssets() {
 
   await Assets.init({ manifest, basePath: 'assets' });
   await Assets.loadBundle('default', onProgress);
+
+  initAudio();
 
   msg.emit("preloader/loaded");
 

@@ -31,7 +31,7 @@ export class Background extends Container {
     this.moveRatio = 0.04
 
     this.removeDebugPane = addDebugPane('Background', (pane) => {
-      // pane.expanded = false;
+      pane.expanded = false;
       pane.addBinding(this, '_tilemapOffset', {readonly: true});
       pane.addBinding(this, 'moveRatio', {min: 0, max: 1, step: 0.001});
     });

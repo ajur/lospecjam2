@@ -13,8 +13,7 @@ export class Scoreboard extends Container {
 
   createMenu() {
 
-    const scores = Array.from({length: 10}, () => 0)
-      .sort((a,b) => b - a)
+    const scores = Array.from({length: 10}, (_, idx) => ''+(this.game.scoreboard[idx]?.score || 0))
       .join('\n');
 
     const menu = new Menu({

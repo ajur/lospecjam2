@@ -2,7 +2,7 @@ import { GameScene } from "~/game/GameScene.js";
 import { MainMenu } from "~/ui/MainMenu.js";
 import { addDebugPane } from "~/fw/debug.js";
 import { localStoredData } from "~/fw/store.js";
-import { HEIGHT, WIDTH } from "~/consts.js";
+import { HEIGHT, SCOREBOARD_SIZE, WIDTH } from "~/consts.js";
 import { Scoreboard } from "~/ui/Scoreboard.js";
 import { Controls } from "~/ui/Controls.js";
 import { About } from "~/ui/About.js";
@@ -31,6 +31,7 @@ export class Game {
     this.player2controller = null;
 
     this.settings = localStoredData("gameSettings", DEFAULT_SETTINGS);
+    this.scoreboard = localStoredData("scoreboard", []);
 
     addDebugPane("Settings", (pane) => {
       pane.expanded = false;
@@ -103,6 +104,16 @@ export class Game {
   gotoAbout() {
     if (this.inTransition) return;
     this.setScene(new About(this), FROM_RIGHT)
+  }
+
+  addScore(score) {
+    if (this.scoreboard.length < SCOREBOARD_SIZE || score.score > this.scoreboard[SCOREBOARD_SIZE - 1].score) {
+      this.scoreboard.push(score);
+      this.scoreboard.sort((a, b) => b.score - a.score);
+      if (this.scoreboard.length > SCOREBOARD_SIZE) {
+        this.scoreboard.length = SCOREBOARD_SIZE;
+      }
+    }
   }
 
 }

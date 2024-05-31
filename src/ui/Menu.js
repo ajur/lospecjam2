@@ -2,6 +2,7 @@ import { BitmapText, Container, Graphics } from "pixi.js";
 import msg from "~/fw/msg.js";
 import { createAnimation } from "~/fw/pixiTools.js";
 import { COLOR_BLACK, COLOR_GRAY, COLOR_STEEL_BLUE, COLOR_WHITE, FONT_BIG, FONT_HEADER } from "~/consts.js";
+import { playSound } from "~/fw/audio.js";
 
 const MENU_ITEM_COLOR = COLOR_GRAY;
 const MENU_ITEM_SELECTED = COLOR_WHITE;
@@ -58,6 +59,7 @@ export class Menu extends Container {
       next.style.fill = MENU_ITEM_SELECTED;
       this.selector.x = next.x - 8;
       this.selector.y = next.y + 7;
+      playSound("uiSelect");
     }
   }
 

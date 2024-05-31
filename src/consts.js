@@ -55,3 +55,5 @@ export const FONT_SMALL = {
   fontFamily: "04b03",
   fontSize: 8
 };
+
+export const SCOREBOARD_SIZE = 10;

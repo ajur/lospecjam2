@@ -66,9 +66,9 @@ export class Map extends Container {
       const rowPos = rowIdx * this.tileSize + this._tilemapOffset;
 
       const rectLeft = new Rectangle(0, rowPos, nLeft * this.tileSize, this.tileSize);
-      if (rectLeft.intersects(bounds)) outBounds.push(rectLeft);
+      if (rectLeft.intersects(bounds)) outBounds.push(rectLeft.pad(-1));
       const rectRight = new Rectangle(this.width - nRight * this.tileSize, rowPos, nRight * this.tileSize, this.tileSize);
-      if (rectRight.intersects(bounds)) outBounds.push(rectRight);
+      if (rectRight.intersects(bounds)) outBounds.push(rectRight.pad(-1));
     }
     return outBounds;
   }

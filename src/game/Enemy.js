@@ -4,6 +4,7 @@ import { rand } from "~/fw/Random.js";
 import { HEIGHT, TILE_SIZE } from "~/consts.js";
 import msg from "~/fw/msg.js";
 import { ColliderRect } from "~/game/ColliderRect.js";
+import { playSound } from "~/fw/audio.js";
 
 
 export class Enemy extends Container {
@@ -114,6 +115,9 @@ export class EnemySmall extends Enemy {
         this.destroy();
       }
     }));
+
+    playSound("explosionSmall");
+
     msg.emit('enemyHit', {
       destroyed: true,
       size: 'small'
@@ -166,6 +170,8 @@ export class EnemyBig extends Enemy {
         expl.y = Math.round(coll.y + coll.height / 2);
       }
 
+      playSound("explosionBig");
+
       msg.emit('enemyHit', {
         destroyed: true,
         wasDamaged: this.damagedPart !== null,
@@ -187,6 +193,8 @@ export class EnemyBig extends Enemy {
       }));
       expl.x = Math.round(this.damagedPart.x + this.damagedPart.width / 2);
       expl.y = Math.round(this.damagedPart.y + this.damagedPart.height / 2);
+
+      playSound("explosionMedium");
 
       msg.emit('enemyHit', {
         destroyed: false,
