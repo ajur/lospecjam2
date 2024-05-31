@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "build:assets": "assetpack -c ./assets/assetpack.js"
+    "build:assets": "assetpack -c ./assets/assetpack.js",
+    "build-gh": "vite build --base=/lospecjam2/",
+    "preview-gh": "vite preview --base=/lospecjam2/"
   },
   "devDependencies": {
     "@assetpack/cli": "^0.8.0",
