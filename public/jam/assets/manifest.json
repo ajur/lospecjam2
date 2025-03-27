@@ -1,0 +1,92 @@
+{
+  "bundles": [
+    {
+      "name": "default",
+      "assets": [
+        {
+          "alias": [
+            "04b03.png",
+            "04b03.png"
+          ],
+          "src": [
+            "04b03.png"
+          ]
+        },
+        {
+          "alias": [
+            "04b03.xml",
+            "04b03.xml"
+          ],
+          "src": [
+            "04b03.xml"
+          ]
+        },
+        {
+          "alias": [
+            "BMjapan.png",
+            "BMjapan.png"
+          ],
+          "src": [
+            "BMjapan.png"
+          ]
+        },
+        {
+          "alias": [
+            "BMjapan.xml",
+            "BMjapan.xml"
+          ],
+          "src": [
+            "BMjapan.xml"
+          ]
+        },
+        {
+          "alias": [
+            "BMspace.png",
+            "BMspace.png"
+          ],
+          "src": [
+            "BMspace.png"
+          ]
+        },
+        {
+          "alias": [
+            "BMspace.xml",
+            "BMspace.xml"
+          ],
+          "src": [
+            "BMspace.xml"
+          ]
+        },
+        {
+          "alias": [
+            "sounds.json",
+            "sounds",
+            "sounds.json",
+            "sounds"
+          ],
+          "src": [
+            "sounds.json"
+          ]
+        },
+        {
+          "alias": [
+            "spritesheet.json",
+            "spritesheet.json"
+          ],
+          "src": [
+            "spritesheet.json"
+          ]
+        },
+        {
+          "alias": [
+            "spritesheet.png",
+            "spritesheet.png"
+          ],
+          "src": [
+            "spritesheet.png"
+          ]
+        }
+      ]
+    }
+  ]
+}

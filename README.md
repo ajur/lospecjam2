@@ -18,6 +18,8 @@ Optional:
 - unlimited 256x256px image textures
 
 **Web or mobile:** https://ajur.pl/lospecjam2/
+**Itch.io page:** https://ajur.itch.io/space-raid
+**Itch.io jam entry page:** https://itch.io/jam/lospec-jam-2/rate/2743660
 
 ### Changelog:
 #### 0.9

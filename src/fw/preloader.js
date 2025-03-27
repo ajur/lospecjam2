@@ -3,6 +3,7 @@ import { Assets } from "pixi.js";
 import msg from "./msg";
 import { initAudio } from "./audio";
 
+
 let onProgress;
 let onLoaded;
 
@@ -39,7 +40,7 @@ function show() {
 }
 
 async function loadAssets() {
-  const manifestFile = await fetch(import.meta.env.BASE_URL + '/assets/manifest.json');
+  const manifestFile = await fetch(new URL('/assets/manifest.json', import.meta.url));
   const manifest = await manifestFile.json();
 
   await Assets.init({ manifest, basePath: 'assets' });
